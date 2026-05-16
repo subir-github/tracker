@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Task Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --bg:#ffffff;--bg2:#f7f7f6;--bg3:#f0efee;
+  --border:rgba(0,0,0,0.10);--border2:rgba(0,0,0,0.18);
+  --text:#1a1a19;--text2:#5f5e5a;--text3:#9c9a92;
+  --r:8px;--rl:12px;
+  --blue-bg:#e6f1fb;--blue-t:#185fa5;--blue-b:#378add;
+  --amber-bg:#faeeda;--amber-t:#854f0b;--amber-b:#ef9f27;
+  --green-bg:#eaf3de;--green-t:#3b6d11;--green-b:#639922;
+  --red-bg:#fcebeb;--red-t:#a32d2d;--red-b:#e24b4a;
+  --purple-bg:#eeedfe;--purple-t:#534ab7;--purple-b:#7f77dd;
+  --gray-b:#b4b2a9;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1e1e1c;--bg2:#272725;--bg3:#2e2e2b;
+    --border:rgba(255,255,255,0.10);--border2:rgba(255,255,255,0.20);
+    --text:#e8e6de;--text2:#a8a69e;--text3:#6e6c66;
+    --blue-bg:#0c2d4a;--blue-t:#85b7eb;
+    --amber-bg:#3d2a06;--amber-t:#f9cb42;
+    --green-bg:#172e06;--green-t:#97c459;
+    --red-bg:#3a1010;--red-t:#f09595;
+    --purple-bg:#1e1b40;--purple-t:#afa9ec;
+  }
+}
+html,body{height:100%;min-height:100vh}
+body{font-family:var(--font);font-size:14px;background:var(--bg3);color:var(--text);line-height:1.5}
+.app{max-width:1200px;margin:0 auto;padding:20px 20px 48px;display:flex;flex-direction:column;gap:14px}
+
+/* Cards */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:14px 18px}
+.h-left{display:flex;align-items:center;gap:12px}
+.h-icon{width:38px;height:38px;background:var(--bg2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);border:1px solid var(--border);flex-shrink:0}
+.h-title{font-size:16px;font-weight:600}
+.h-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.h-actions{display:flex;gap:8px;align-items:center}
+.badge{font-size:11px;padding:4px 10px;border-radius:20px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;gap:5px}
+.btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;font-family:var(--font);color:var(--text2);transition:background .15s;white-space:nowrap}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.primary:hover{opacity:.85}
+.btn.sm{padding:4px 10px;font-size:11px}
+.btn.loading,.btn.saving{opacity:.6;pointer-events:none}
+.btn i{font-size:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.syncing i{animation:spin 1s linear infinite}
+
+/* Config */
+.config{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;display:flex;flex-direction:column;gap:12px;transition:opacity .3s}
+.config-title{font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.config-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.cfg-g{display:flex;flex-direction:column;gap:4px}
+.cfg-g.span2{grid-column:span 2}
+.cfg-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.cfg-input{padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:var(--mono);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s;width:100%}
+.cfg-input:focus{border-color:var(--blue-b)}
+.cfg-note{font-size:11px;color:var(--text3);line-height:1.6;background:var(--bg);border-radius:var(--r);padding:8px 10px;border:1px solid var(--border)}
+.cfg-note code{font-family:var(--mono);font-size:10px;background:var(--bg2);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
+.config-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fb{font-size:11px;padding:5px 10px;border-radius:var(--r);display:flex;align-items:center;gap:6px}
+.fb.success{background:var(--green-bg);color:var(--green-t)}
+.fb.error{background:var(--red-bg);color:var(--red-t)}
+.fb.info{background:var(--blue-bg);color:var(--blue-t)}
+
+/* Status bar */
+.status-bar{display:grid;gap:8px}
+.sc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;cursor:pointer;transition:background .12s,border-color .12s}
+.sc:hover{background:var(--bg2)}
+.sc.active{border-width:2px}
+.sc-count{font-size:24px;font-weight:600;line-height:1}
+.sc-label{font-size:10px;color:var(--text3);margin-top:4px}
+.sc-line{height:3px;border-radius:2px;margin-top:10px}
+
+/* Main layout */
+.main{display:grid;grid-template-columns:1fr 340px;gap:12px;align-items:start}
+
+/* Task panel */
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.panel-title{font-size:12px;font-weight:600}
+.type-filters{display:flex;gap:5px;flex-wrap:wrap}
+.tf{padding:3px 10px;border-radius:20px;font-size:10px;font-family:var(--font);border:1px solid var(--border2);background:transparent;cursor:pointer;color:var(--text2);transition:all .12s}
+.tf.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+
+/* Task rows */
+.task-row{display:grid;grid-template-columns:48px 1fr 68px 84px;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:var(--bg2)}
+.task-row.selected{background:var(--blue-bg)}
+.t-no{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.t-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-sub{font-size:10px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.type-chip{font-size:9px;border-radius:20px;padding:2px 8px;background:var(--bg2);color:var(--text2);border:1px solid var(--border);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Status chips */
+.sc-chip{font-size:10px;border-radius:20px;padding:3px 9px;white-space:nowrap;text-align:center;font-weight:500;display:inline-block}
+.s-todo   {background:var(--bg2);      color:var(--text2)}
+.s-inprog {background:var(--blue-bg);  color:var(--blue-t)}
+.s-review {background:var(--amber-bg); color:var(--amber-t)}
+.s-done   {background:var(--green-bg); color:var(--green-t)}
+.s-blocked{background:var(--red-bg);   color:var(--red-t)}
+.s-hold   {background:var(--purple-bg);color:var(--purple-t)}
+
+/* Detail panel */
+.detail-panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;min-height:420px;display:flex;flex-direction:column}
+.detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3);padding:48px 24px;text-align:center}
+.detail-empty i{font-size:32px}
+.detail-empty strong{font-size:13px;color:var(--text2);font-weight:500}
+.detail-scroll{overflow-y:auto;flex:1}
+
+.d-top{padding:14px 16px;border-bottom:1px solid var(--border)}
+.d-no{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:6px}
+.d-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.d-title{font-size:14px;font-weight:600;line-height:1.4;flex:1}
+.d-chips{display:flex;flex-wrap:wrap;gap:5px}
+
+.d-section{padding:12px 16px;border-bottom:1px solid var(--border)}
+.d-sec-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:10px}
+
+/* Pipeline */
+.pipeline{display:flex;align-items:center}
+.pipe-step{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:0}
+.pipe-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;border:1.5px solid var(--border2);background:var(--bg2);color:var(--text3);transition:all .2s;flex-shrink:0}
+.pipe-dot.done   {background:var(--green-bg);border-color:var(--green-b);color:var(--green-t)}
+.pipe-dot.current{background:var(--blue-bg); border-color:var(--blue-b); color:var(--blue-t)}
+.pipe-dot.blocked{background:var(--red-bg);  border-color:var(--red-b);  color:var(--red-t)}
+.pipe-lbl{font-size:9px;color:var(--text3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;padding:0 2px}
+.pipe-conn{flex:1;height:1.5px;background:var(--border2);margin-bottom:22px;transition:background .2s;min-width:4px}
+.pipe-conn.done{background:var(--green-b)}
+.blocked-notice{font-size:11px;color:var(--red-t);background:var(--red-bg);border-radius:var(--r);padding:7px 10px;display:flex;align-items:center;gap:6px;margin-top:8px}
+
+/* Fields */
+.d-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.d-field{display:flex;flex-direction:column;gap:3px}
+.d-field.full{grid-column:1/-1}
+.d-field-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.d-field-val{font-size:12px;font-weight:500}
+.d-field-val.overdue{color:var(--red-t)}
+
+/* Edit form */
+.edit-form{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.edit-form-title{font-size:12px;font-weight:600;color:var(--text2);padding-bottom:8px;border-bottom:1px solid var(--border)}
+.f-g{display:flex;flex-direction:column;gap:4px}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.f-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.f-input,.f-select{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:var(--font);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.f-input:focus,.f-select:focus{border-color:var(--blue-b)}
+.f-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding-top:4px;flex-wrap:wrap}
+
+.empty-list{padding:32px;text-align:center;color:var(--text3);font-size:12px}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* Email config section */
+.email-config{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.email-config-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.team-config{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.team-rows{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto}
+.team-row{display:grid;grid-template-columns:1fr 1fr 32px;gap:8px;align-items:center}
+.team-row input{padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:var(--font);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s;width:100%}
+.team-row input:focus{border-color:var(--blue-b)}
+.team-row input::placeholder{color:var(--text3)}
+.del-btn{width:28px;height:28px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;flex-shrink:0;transition:all .12s}
+.del-btn:hover{background:var(--red-bg);color:var(--red-t);border-color:var(--red-t)}
+.email-auto-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green-t);font-weight:500}
+.email-warn-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:2px 8px;border-radius:20px;background:var(--amber-bg);color:var(--amber-t);font-weight:500}
+
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg);border:1px solid var(--border2);border-radius:var(--rl);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.18);animation:slideUp .18s ease}
+@keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.modal-close{background:transparent;border:none;cursor:pointer;font-size:18px;color:var(--text3);display:flex;align-items:center;padding:2px;border-radius:4px}
+.modal-close:hover{color:var(--text);background:var(--bg2)}
+.modal-body{padding:18px;display:flex;flex-direction:column;gap:12px}
+.modal-task-banner{background:var(--blue-bg);border-radius:var(--r);padding:10px 12px;display:flex;align-items:flex-start;gap:8px}
+.modal-task-banner i{color:var(--blue-t);font-size:15px;flex-shrink:0;margin-top:1px}
+.modal-task-info{display:flex;flex-direction:column;gap:2px}
+.modal-task-name{font-size:12px;font-weight:600;color:var(--blue-t)}
+.modal-task-meta{font-size:11px;color:var(--blue-t);opacity:.8}
+.modal-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.modal-fb{font-size:11px;display:flex;align-items:center;gap:6px}
+.modal-fb.success{color:var(--green-t)}
+.modal-fb.error{color:var(--red-t)}
+.notify-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;font-family:var(--font);color:var(--blue-t);transition:background .15s;white-space:nowrap}
+.notify-btn:hover{background:var(--blue-bg)}
+.notify-btn i{font-size:13px}
+/* Notify all button */
+.btn-notify-all{display:flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--amber-b);border-radius:var(--r);background:var(--amber-bg);cursor:pointer;font-size:11px;font-family:var(--font);color:var(--amber-t);font-weight:500;white-space:nowrap;transition:all .15s}
+.btn-notify-all:hover{background:var(--amber-b);color:#fff}
+.btn-notify-all i{font-size:13px}
+/* Bulk dev card */
+.bulk-dev-card{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--bg)}
+.bulk-dev-head{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.bulk-dev-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;background:var(--blue-bg);color:var(--blue-t)}
+.bulk-dev-name{font-size:12px;font-weight:600;flex:1}
+.bulk-dev-email{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.bulk-dev-tasks{padding:8px 12px;display:flex;flex-direction:column;gap:4px}
+.bulk-task-row{display:flex;align-items:center;gap:8px;font-size:11px;padding:3px 0}
+.bulk-task-row input[type=checkbox]{width:13px;height:13px;cursor:pointer;flex-shrink:0;accent-color:var(--blue-b)}
+.bulk-task-name{flex:1;color:var(--text)}
+.bulk-no-email{background:var(--amber-bg);border-color:var(--amber-b)}
+.bulk-no-email .bulk-dev-head{background:var(--amber-bg)}
+.bulk-no-email .bulk-dev-email{color:var(--amber-t)}
+/* Result rows */
+.result-row{display:flex;align-items:center;gap:8px;font-size:11px;padding:4px 8px;border-radius:var(--r)}
+.result-row.ok{background:var(--green-bg);color:var(--green-t)}
+.result-row.fail{background:var(--red-bg);color:var(--red-t)}
+.result-row.skip{background:var(--bg2);color:var(--text3)}
+
+@media(max-width:900px){
+  .main{grid-template-columns:1fr}
+  .config-grid{grid-template-columns:1fr 1fr}
+  .cfg-g.span2{grid-column:span 2}
+}
+@media(max-width:600px){
+  .app{padding:12px 12px 32px}
+  .config-grid{grid-template-columns:1fr;}.cfg-g.span2{grid-column:span 1}
+  .task-row{grid-template-columns:40px 1fr 80px}
+  .task-row .type-chip{display:none}
+  .status-bar{grid-template-columns:repeat(3,1fr)!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="h-left">
+      <div class="h-icon"><i class="ti ti-layout-dashboard" aria-hidden="true"></i></div>
+      <div>
+        <div class="h-title">Team Task Dashboard</div>
+        <div class="h-sub" id="header-sub">Connect your Google Sheet to get started</div>
+      </div>
+    </div>
+    <div class="h-actions">
+      <div class="badge"><i class="ti ti-brand-google" aria-hidden="true"></i> Sheets API</div>
+      <button class="btn" id="sync-btn" onclick="loadFromSheets()">
+        <i class="ti ti-refresh" id="sync-icon"></i> Sync
+      </button>
+    </div>
+  </div>
+
+  <!-- Config -->
+  <div class="config" id="config-panel">
+    <div class="config-title"><i class="ti ti-settings" aria-hidden="true"></i> Google Sheets Connection</div>
+    <div class="config-grid">
+      <div class="cfg-g span2">
+        <label class="cfg-label">Sheet ID</label>
+        <input class="cfg-input" id="cfg-sid" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      </div>
+      <div class="cfg-g span2">
+        <label class="cfg-label">API Key <span style="color:var(--green-t);font-weight:600">(Read)</span> — from Google Cloud Console</label>
+        <input class="cfg-input" id="cfg-key" placeholder="AIzaSy..." type="password">
+      </div>
+      <div class="cfg-g">
+        <label class="cfg-label">Tab / Sheet Name</label>
+        <input class="cfg-input" id="cfg-tab" placeholder="Sheet1" value="Sheet1">
+      </div>
+      <div class="cfg-g span2">
+        <label class="cfg-label" style="display:flex;align-items:center;gap:6px">
+          OAuth 2.0 Access Token <span style="color:var(--blue-t);font-weight:600">(Read + Write)</span>
+          <span id="oauth-status-badge" style="display:none"></span>
+        </label>
+        <input class="cfg-input" id="cfg-oauth" placeholder="ya29.a0... (paste token to enable edit write-back)" type="password">
+      </div>
+      <div class="cfg-g span2" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="openOAuthGuide()" style="color:var(--blue-t);border-color:var(--blue-b)">
+          <i class="ti ti-info-circle"></i> How to get an OAuth Token
+        </button>
+        <span id="oauth-token-hint" style="font-size:11px;color:var(--text3)">Without a token, edits are saved locally only.</span>
+      </div>
+    </div>
+    <div class="cfg-note">
+      Columns must be in this exact order: <code>No</code> <code>Task</code> <code>Status</code> <code>Client</code> <code>Developers</code> <code>QA</code> <code>Type</code> <code>Date</code> — row 1 = headers, data from row 2. <strong>API Key</strong> = read-only (fetching tasks). <strong>OAuth Token</strong> = required for edit write-back to Google Sheets. Tokens expire in ~1 hour.
+    </div>
+    <div class="config-actions">
+      <button class="btn primary" id="connect-btn" onclick="connectSheets()">
+        <i class="ti ti-plug-connected" aria-hidden="true"></i> Connect &amp; Load
+      </button>
+      <button class="btn" onclick="saveConfigToFile()" title="Download updated config.js with current credentials">
+        <i class="ti ti-download" aria-hidden="true"></i> Save to config.js
+      </button>
+      <div id="conn-fb"></div>
+      <button class="btn" onclick="loadSample()">Load sample data</button>
+    </div>
+  </div>
+
+  <!-- EmailJS Config -->
+  <div class="email-config" id="email-config-panel">
+    <div class="config-title"><i class="ti ti-mail" aria-hidden="true"></i> Email Notifications (EmailJS)</div>
+    <div class="email-config-grid">
+      <div class="cfg-g">
+        <label class="cfg-label">EmailJS Public Key</label>
+        <input class="cfg-input" id="ejs-pubkey" placeholder="user_xxxxxxxxxx">
+      </div>
+      <div class="cfg-g">
+        <label class="cfg-label">Service ID</label>
+        <input class="cfg-input" id="ejs-service" placeholder="service_xxxxxxx">
+      </div>
+      <div class="cfg-g">
+        <label class="cfg-label">Template ID</label>
+        <input class="cfg-input" id="ejs-template" placeholder="template_xxxxxxx">
+      </div>
+      <div class="cfg-g span2">
+        <label class="cfg-label">Your Name (Sender)</label>
+        <input class="cfg-input" id="ejs-from" placeholder="e.g. Subir — Team Lead">
+      </div>
+    </div>
+    <div class="cfg-note">
+      Free at <a href="https://emailjs.com" target="_blank" style="color:var(--blue-t)">emailjs.com</a> (200 emails/month free). Create account → add Email Service → create Template with these variables: <code>to_email</code> <code>to_name</code> <code>from_name</code> <code>task_name</code> <code>task_no</code> <code>task_status</code> <code>task_client</code> <code>task_date</code> <code>subject</code> <code>message</code>. Paste your keys above and click Save.
+    </div>
+    <div class="config-actions">
+      <button class="btn primary" onclick="saveEmailConfig()"><i class="ti ti-check" aria-hidden="true"></i> Save Email Config</button>
+      <button class="btn" onclick="saveConfigToFile()"><i class="ti ti-download" aria-hidden="true"></i> Save to config.js</button>
+      <div id="ejs-fb"></div>
+    </div>
+  </div>
+
+  <!-- Team Members (name → email map) -->
+  <div class="team-config" id="team-config-panel">
+    <div class="config-title"><i class="ti ti-users" aria-hidden="true"></i> Team Members — Name to Email Map</div>
+    <div class="cfg-note" style="margin-bottom:2px">
+      Add each developer and QA member here. When you click <strong>Notify</strong>, their email is auto-filled from this list based on the name in your sheet.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 32px;gap:8px;padding:0 0 4px">
+      <span class="cfg-label" style="padding-left:2px">Name (must match sheet exactly)</span>
+      <span class="cfg-label" style="padding-left:2px">Email</span>
+      <span></span>
+    </div>
+    <div class="team-rows" id="team-rows"></div>
+    <div class="config-actions">
+      <button class="btn" onclick="addTeamRow()"><i class="ti ti-plus" aria-hidden="true"></i> Add Member</button>
+      <button class="btn primary" onclick="saveTeamMap()"><i class="ti ti-check" aria-hidden="true"></i> Save Team</button>
+      <button class="btn" onclick="saveConfigToFile()"><i class="ti ti-download" aria-hidden="true"></i> Save to config.js</button>
+      <div id="team-fb"></div>
+    </div>
+  </div>
+
+  <!-- Email Modal -->
+  <div class="modal-overlay" id="email-modal" style="display:none" onclick="closeModalOnOverlay(event)">
+    <div class="modal" id="modal-box">
+      <div class="modal-head">
+        <div class="modal-title"><i class="ti ti-send" aria-hidden="true"></i> Notify Developer</div>
+        <button class="modal-close" onclick="closeModal()" aria-label="Close"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-task-banner">
+          <i class="ti ti-clipboard-text" aria-hidden="true"></i>
+          <div class="modal-task-info">
+            <div class="modal-task-name" id="m-task-name"></div>
+            <div class="modal-task-meta" id="m-task-meta"></div>
+          </div>
+        </div>
+        <div class="f-g">
+          <label class="f-label" style="display:flex;align-items:center;justify-content:space-between">
+            Developer Email
+            <span id="m-email-badge"></span>
+          </label>
+          <input class="f-input" id="m-to-email" placeholder="developer@example.com" type="email">
+        </div>
+        <div class="f-g">
+          <label class="f-label">Developer Name</label>
+          <input class="f-input" id="m-to-name" placeholder="e.g. Raj M.">
+        </div>
+        <div class="f-g">
+          <label class="f-label">Subject</label>
+          <input class="f-input" id="m-subject">
+        </div>
+        <div class="f-g">
+          <label class="f-label">Message</label>
+          <textarea class="f-input" id="m-message" rows="6" style="resize:vertical;line-height:1.6"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="modal-fb" id="modal-fb"></div>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn primary" id="btn-send" onclick="sendEmail()">
+            <i class="ti ti-send" aria-hidden="true"></i> Send Email
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Notify Modal -->
+  <div class="modal-overlay" id="bulk-modal" style="display:none" onclick="closeBulkOnOverlay(event)">
+    <div class="modal" style="max-width:600px" id="bulk-modal-box">
+      <div class="modal-head">
+        <div class="modal-title"><i class="ti ti-bell-ringing" aria-hidden="true"></i> Notify All Developers</div>
+        <button class="modal-close" onclick="closeBulkModal()" aria-label="Close"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+      <div class="modal-body" style="padding-bottom:8px">
+        <div class="cfg-note" style="margin-bottom:4px">
+          Each developer below is listed with their assigned tasks. Uncheck anyone you don't want to notify. Developers without a mapped email are highlighted — add them to the Team list first.
+        </div>
+        <div id="bulk-dev-list" style="display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto;padding-right:4px"></div>
+      </div>
+      <div class="modal-footer" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div id="bulk-progress" style="display:none">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px">
+            <span id="bulk-progress-label">Sending…</span>
+            <span id="bulk-progress-count"></span>
+          </div>
+          <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div id="bulk-progress-bar" style="height:100%;background:var(--blue-b);border-radius:3px;width:0%;transition:width .3s"></div>
+          </div>
+        </div>
+        <div id="bulk-results" style="display:none;flex-direction:column;gap:4px;max-height:140px;overflow-y:auto"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+          <span id="bulk-select-info" style="font-size:11px;color:var(--text3);margin-right:auto"></span>
+          <button class="btn" onclick="closeBulkModal()">Cancel</button>
+          <button class="btn primary" id="btn-bulk-send" onclick="sendBulkEmails()">
+            <i class="ti ti-send" aria-hidden="true"></i> Send All Emails
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar" id="status-bar"></div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="card">
+      <div class="panel-head">
+        <span class="panel-title" id="list-title">All Tasks</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="btn-notify-all" onclick="openBulkModal()">
+            <i class="ti ti-bell-ringing" aria-hidden="true"></i> Notify All Developers
+          </button>
+          <div class="type-filters" id="type-filters"></div>
+        </div>
+      </div>
+      <div id="task-list"></div>
+    </div>
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-empty">
+        <i class="ti ti-hand-click" aria-hidden="true"></i>
+        <strong>Select a task</strong>
+        <span style="font-size:11px">Click any row to view details and edit</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ── Column mapping (0-indexed): No,Task,Status,Client,Developers,QA,Type,Date
+const COL={no:0,task:1,status:2,client:3,dev:4,qa:5,type:6,date:7};
+
+const STATUS_STEPS=['To Do','In Progress','Review','Done'];
+const STATUS_CFG={
+  'To Do':      {dot:'s-todo',   bar:'var(--gray-b)',   text:'var(--text2)'},
+  'In Progress':{dot:'s-inprog', bar:'var(--blue-b)',   text:'var(--blue-t)'},
+  'Review':     {dot:'s-review', bar:'var(--amber-b)',  text:'var(--amber-t)'},
+  'Done':       {dot:'s-done',   bar:'var(--green-b)',  text:'var(--green-t)'},
+  'Blocked':    {dot:'s-blocked',bar:'var(--red-b)',    text:'var(--red-t)'},
+  'On Hold':    {dot:'s-hold',   bar:'var(--purple-b)', text:'var(--purple-t)'},
+};
+
+const SAMPLE=[
+  [1,'Redesign homepage hero','In Progress','Acme Corp','Raj M., Anika T.','Priya S.','Frontend','2026-05-18'],
+  [2,'Fix mobile checkout bug','Blocked','ShopEase','Sam K.','Priya S.','Bug Fix','2026-05-15'],
+  [3,'Stripe subscription integration','In Progress','Acme Corp','Anika T.','Sam K.','Backend','2026-05-22'],
+  [4,'Write API docs v2','Review','DevToolCo','Sam K.','','Docs','2026-05-20'],
+  [5,'Set up CI/CD pipeline','Done','DevToolCo','Raj M.','Anika T.','DevOps','2026-05-12'],
+  [6,'WCAG 2.1 accessibility audit','To Do','GovPortal','Priya S.','Sam K.','QA','2026-05-28'],
+  [7,'Analytics dashboard charts','To Do','ShopEase','Anika T.','Priya S.','Frontend','2026-05-25'],
+  [8,'Email notification system','Done','GovPortal','Sam K.','Raj M.','Backend','2026-05-10'],
+  [9,'CMS content migration','In Progress','RetailBrand','Raj M.','','Content','2026-05-19'],
+  [10,'Performance audit','Review','Acme Corp','Anika T.','Sam K.','DevOps','2026-05-21'],
+];
+
+let SHEET_ID='', API_KEY='', SHEET_TAB='Sheet1', OAUTH_TOKEN='';
+let tasks=[], filtered=[], selectedNo=null, activeStatus='All', activeType='All', editing=false;
+
+function rowToTask(r,idx){
+  return{no:r[COL.no]||'',task:r[COL.task]||'',status:r[COL.status]||'To Do',
+    client:r[COL.client]||'',dev:r[COL.dev]||'',qa:r[COL.qa]||'',
+    type:r[COL.type]||'',date:r[COL.date]||'',rowIdx:idx};
+}
+
+function connectSheets(){
+  SHEET_ID    = document.getElementById('cfg-sid').value.trim();
+  API_KEY     = document.getElementById('cfg-key').value.trim();
+  SHEET_TAB   = document.getElementById('cfg-tab').value.trim()||'Sheet1';
+  OAUTH_TOKEN = document.getElementById('cfg-oauth').value.trim();
+  if(!SHEET_ID||!API_KEY){showFb('conn-fb','error','Enter Sheet ID and API Key');return;}
+  updateOAuthBadge();
+  loadFromSheets();
+}
+
+function updateOAuthBadge(){
+  const badge = document.getElementById('oauth-status-badge');
+  const hint  = document.getElementById('oauth-token-hint');
+  if(!badge) return;
+  if(OAUTH_TOKEN){
+    badge.style.display='inline-flex';
+    badge.className='email-auto-badge';
+    badge.innerHTML='<i class="ti ti-check"></i> Write-back enabled';
+    if(hint) hint.textContent='Edits will be written back to Google Sheets.';
+  } else {
+    badge.style.display='none';
+    if(hint) hint.textContent='Without a token, edits are saved locally only.';
+  }
+}
+
+function openOAuthGuide(){
+  const guide = `HOW TO GET AN OAUTH 2.0 ACCESS TOKEN\n\n` +
+  `Option A — Google OAuth Playground (quickest, ~2 min):\n` +
+  `1. Go to: https://developers.google.com/oauthplayground\n` +
+  `2. Click the ⚙️ gear icon (top right) → check "Use your own OAuth credentials"\n` +
+  `3. Enter your Google Cloud OAuth Client ID & Secret\n` +
+  `4. In the left list, find "Google Sheets API v4" and select:\n` +
+  `   https://www.googleapis.com/auth/spreadsheets\n` +
+  `5. Click "Authorize APIs" → sign in → Allow\n` +
+  `6. Click "Exchange authorization code for tokens"\n` +
+  `7. Copy the "Access token" (starts with ya29.) → paste it here\n\n` +
+  `Note: Tokens expire in ~1 hour. After that, repeat steps 5-7.\n\n` +
+  `Option B — gcloud CLI:\n` +
+  `  gcloud auth print-access-token\n\n` +
+  `For production use, implement proper OAuth 2.0 server-side flow.`;
+  alert(guide);
+}
+
+async function loadFromSheets(){
+  const sb=document.getElementById('sync-btn');
+  sb.classList.add('syncing');
+  showFb('conn-fb','info','Connecting…');
+  // Always capture latest token values on sync
+  const oauthEl = document.getElementById('cfg-oauth');
+  if(oauthEl && oauthEl.value.trim()) {
+    OAUTH_TOKEN = oauthEl.value.trim();
+    updateOAuthBadge();
+  }
+  try{
+    if(!SHEET_ID||!API_KEY) throw new Error('no creds');
+    const range=encodeURIComponent(SHEET_TAB+'!A2:H500');
+    const res=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const d=await res.json();
+    tasks=(d.values||[]).map((r,i)=>rowToTask(r,i+2));
+    document.getElementById('header-sub').textContent=`${tasks.length} tasks loaded from Google Sheets`;
+    showFb('conn-fb','success',`Loaded ${tasks.length} tasks`);
+    document.getElementById('config-panel').style.opacity='.75';
+  }catch(e){
+    showFb('conn-fb','error','Could not connect — loaded sample data instead');
+    loadSample(true);
+  }
+  sb.classList.remove('syncing');
+  activeStatus='All';activeType='All';selectedNo=null;editing=false;
+  render();
+}
+
+function loadSample(silent){
+  tasks=SAMPLE.map((r,i)=>rowToTask(r,i+2));
+  if(!silent) showFb('conn-fb','info','Sample data loaded. Connect your sheet for live data.');
+  document.getElementById('header-sub').textContent='Showing sample data';
+  activeStatus='All';activeType='All';selectedNo=null;editing=false;
+  render();
+}
+
+async function writeRow(t){
+  if(!SHEET_ID) throw new Error('no sheet id');
+  if(!OAUTH_TOKEN) throw new Error('no oauth token');
+  const range = encodeURIComponent(SHEET_TAB+'!A'+t.rowIdx+':H'+t.rowIdx);
+  const url   = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+  const body  = {values:[[t.no,t.task,t.status,t.client,t.dev,t.qa,t.type,t.date]]};
+  const res   = await fetch(url,{
+    method:'PUT',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+OAUTH_TOKEN
+    },
+    body:JSON.stringify(body)
+  });
+  if(!res.ok){
+    const errData = await res.json().catch(()=>({}));
+    const msg = errData?.error?.message || ('HTTP '+res.status);
+    throw new Error(msg);
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){applyFilter();renderStatusBar();renderTypeFilters();renderList();}
+
+function applyFilter(){
+  filtered=tasks.filter(t=>(activeStatus==='All'||t.status===activeStatus)&&(activeType==='All'||t.type===activeType));
+}
+
+function renderStatusBar(){
+  const allStatuses=['To Do','In Progress','Review','Blocked','On Hold','Done'];
+  const present=['All',...allStatuses.filter(s=>tasks.some(t=>t.status===s))];
+  const el=document.getElementById('status-bar');
+  el.style.gridTemplateColumns='repeat('+present.length+',1fr)';
+  el.innerHTML=present.map(s=>{
+    const cnt=s==='All'?tasks.length:tasks.filter(t=>t.status===s).length;
+    const cfg=STATUS_CFG[s]||STATUS_CFG['To Do'];
+    const active=activeStatus===s;
+    const bar=s==='All'?'var(--gray-b)':cfg.bar;
+    const col=s==='All'?'var(--text)':cfg.text;
+    return`<div class="sc${active?' active':''}" style="${active?'border-color:'+bar:''}" onclick="setStatus('${s}')">
+      <div class="sc-count" style="color:${col}">${cnt}</div>
+      <div class="sc-label">${s}</div>
+      <div class="sc-line" style="background:${bar};opacity:${active?1:.35}"></div>
+    </div>`;
+  }).join('');
+}
+
+function renderTypeFilters(){
+  const types=['All',...[...new Set(tasks.map(t=>t.type).filter(Boolean))].sort()];
+  document.getElementById('type-filters').innerHTML=types.map(t=>
+    `<button class="tf${activeType===t?' active':''}" onclick="setType('${t}')">${t}</button>`
+  ).join('');
+}
+
+function setStatus(s){activeStatus=s;applyFilter();renderStatusBar();renderList();if(selectedNo)renderDetail();}
+function setType(t)  {activeType=t;applyFilter();renderTypeFilters();renderList();}
+
+function renderList(){
+  const lbl=activeStatus==='All'?'All Tasks':activeStatus;
+  document.getElementById('list-title').textContent=lbl+' ('+filtered.length+')';
+  const el=document.getElementById('task-list');
+  if(!filtered.length){el.innerHTML='<div class="empty-list">No tasks match this filter.</div>';return;}
+  el.innerHTML=filtered.map(t=>{
+    const cfg=STATUS_CFG[t.status]||STATUS_CFG['To Do'];
+    const overdue=t.date&&new Date(t.date+'T00:00:00')<new Date()&&t.status!=='Done';
+    const sel=String(selectedNo)===String(t.no);
+    return`<div class="task-row${sel?' selected':''}" onclick="selectTask('${t.no}')">
+      <div class="t-no">#${t.no}</div>
+      <div>
+        <div class="t-name">${esc(t.task)}</div>
+        <div class="t-sub">${esc(t.client)}${t.dev?' · '+t.dev.split(',')[0].trim():''}${overdue?' · ⚠ Overdue':''}</div>
+      </div>
+      <div class="type-chip">${esc(t.type||'—')}</div>
+      <div class="sc-chip ${cfg.dot}">${t.status}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectTask(no){selectedNo=String(no);editing=false;renderList();renderDetail();}
+
+function renderDetail(){
+  const t=tasks.find(t=>String(t.no)===String(selectedNo));
+  const el=document.getElementById('detail-panel');
+  if(!t){el.innerHTML='<div class="detail-empty"><i class="ti ti-hand-click"></i><strong>Select a task</strong></div>';return;}
+  if(editing){renderEditForm(t);return;}
+
+  const cfg=STATUS_CFG[t.status]||STATUS_CFG['To Do'];
+  const overdue=t.date&&new Date(t.date+'T00:00:00')<new Date()&&t.status!=='Done';
+  const si=STATUS_STEPS.indexOf(t.status);
+
+  const pipeHTML=STATUS_STEPS.map((step,i)=>{
+    const isDone=(t.status==='Done')||(si>i);
+    const isCur=si===i&&t.status!=='Done'&&t.status!=='Blocked';
+    const isBlk=t.status==='Blocked'&&si===i;
+    const dc=isBlk?'blocked':isDone?'done':isCur?'current':'';
+    const icon=isDone?'ti-check':isCur?'ti-loader-2':'ti-clock';
+    const conn=i<STATUS_STEPS.length-1?`<div class="pipe-conn${isDone?' done':''}"></div>`:'';
+    return`<div class="pipe-step"><div class="pipe-dot ${dc}"><i class="ti ${icon}"></i></div><div class="pipe-lbl">${step}</div></div>${conn}`;
+  }).join('');
+
+  el.innerHTML=`<div class="detail-scroll">
+    <div class="d-top">
+      <div class="d-no">Task #${t.no}</div>
+      <div class="d-title-row">
+        <div class="d-title">${esc(t.task)}</div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="notify-btn" onclick="openEmailModal('${t.no}')"><i class="ti ti-bell-ringing" aria-hidden="true"></i> Notify</button>
+          <button class="btn sm" onclick="startEdit()"><i class="ti ti-pencil"></i> Edit</button>
+        </div>
+      </div>
+      <div class="d-chips">
+        <span class="sc-chip ${cfg.dot}">${t.status}</span>
+        ${t.type?`<span class="sc-chip s-todo">${esc(t.type)}</span>`:''}
+        ${t.client?`<span class="sc-chip s-todo">${esc(t.client)}</span>`:''}
+      </div>
+    </div>
+    <div class="d-section">
+      <div class="d-sec-label">Progress</div>
+      <div class="pipeline">${pipeHTML}</div>
+      ${t.status==='Blocked'?`<div class="blocked-notice"><i class="ti ti-alert-triangle"></i> Blocked — needs attention</div>`:''}
+    </div>
+    <div class="d-section">
+      <div class="d-sec-label">Assignment</div>
+      <div class="d-fields">
+        <div class="d-field"><div class="d-field-label">Developer(s)</div><div class="d-field-val">${esc(t.dev)||'—'}</div></div>
+        <div class="d-field"><div class="d-field-label">QA</div><div class="d-field-val">${esc(t.qa)||'—'}</div></div>
+        <div class="d-field"><div class="d-field-label">Client</div><div class="d-field-val">${esc(t.client)||'—'}</div></div>
+        <div class="d-field"><div class="d-field-label">Type</div><div class="d-field-val">${esc(t.type)||'—'}</div></div>
+        <div class="d-field full"><div class="d-field-label">Date</div>
+          <div class="d-field-val${overdue?' overdue':''}">${fmtDate(t.date)}${overdue?' · ⚠ Overdue':''}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function startEdit(){editing=true;renderDetail();}
+
+function renderEditForm(t){
+  const statuses=['To Do','In Progress','Review','Blocked','On Hold','Done'];
+  const types=[...new Set(tasks.map(t=>t.type).filter(Boolean))];
+  const el=document.getElementById('detail-panel');
+  el.innerHTML=`<div class="detail-scroll"><div class="edit-form">
+    <div class="edit-form-title">Editing Task #${t.no}</div>
+    <div class="f-g"><label class="f-label">Task</label>
+      <input class="f-input" id="ef-task" value="${esc(t.task)}"></div>
+    <div class="f-row">
+      <div class="f-g"><label class="f-label">Status</label>
+        <select class="f-select" id="ef-status">${statuses.map(s=>`<option${t.status===s?' selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="f-g"><label class="f-label">Type</label>
+        <input class="f-input" id="ef-type" value="${esc(t.type)}" list="dl-types">
+        <datalist id="dl-types">${types.map(tp=>`<option value="${esc(tp)}">`).join('')}</datalist></div>
+    </div>
+    <div class="f-g"><label class="f-label">Client</label>
+      <input class="f-input" id="ef-client" value="${esc(t.client)}"></div>
+    <div class="f-row">
+      <div class="f-g"><label class="f-label">Developer(s)</label>
+        <input class="f-input" id="ef-dev" value="${esc(t.dev)}"></div>
+      <div class="f-g"><label class="f-label">QA</label>
+        <input class="f-input" id="ef-qa" value="${esc(t.qa)}"></div>
+    </div>
+    <div class="f-g"><label class="f-label">Date</label>
+      <input class="f-input" type="date" id="ef-date" value="${t.date}"></div>
+    <div class="f-actions">
+      <div id="ef-fb"></div>
+      <button class="btn" onclick="cancelEdit()">Cancel</button>
+      <button class="btn primary" id="btn-save" onclick="saveTask('${t.no}')">
+        <i class="ti ti-device-floppy"></i> Save
+      </button>
+    </div>
+  </div></div>`;
+}
+
+function cancelEdit(){editing=false;renderDetail();}
+
+async function saveTask(no){
+  const t=tasks.find(t=>String(t.no)===String(no));
+  if(!t)return;
+  t.task  =document.getElementById('ef-task').value;
+  t.status=document.getElementById('ef-status').value;
+  t.type  =document.getElementById('ef-type').value;
+  t.client=document.getElementById('ef-client').value;
+  t.dev   =document.getElementById('ef-dev').value;
+  t.qa    =document.getElementById('ef-qa').value;
+  t.date  =document.getElementById('ef-date').value;
+  const btn=document.getElementById('btn-save');
+  btn.classList.add('saving');
+  btn.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite"></i> Saving…';
+  if(OAUTH_TOKEN){
+    try{
+      await writeRow(t);
+      showFb('ef-fb','success','✓ Saved to Google Sheets');
+    }catch(e){
+      const isExpired = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('invalid') || e.message.toLowerCase().includes('expired'));
+      if(isExpired){
+        showFb('ef-fb','error','OAuth token expired — get a new one from the config above');
+      } else {
+        showFb('ef-fb','error','Write failed: '+e.message);
+      }
+    }
+  } else {
+    showFb('ef-fb','info','Saved locally — add an OAuth Token in config to write back to Sheets');
+  }
+  btn.classList.remove('saving');
+  btn.innerHTML='<i class="ti ti-device-floppy"></i> Save';
+  editing=false;
+  render();
+  renderDetail();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showFb(id,type,msg){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const icon=type==='success'?'check':type==='error'?'alert-circle':'info-circle';
+  el.className='fb '+type;
+  el.innerHTML=`<i class="ti ti-${icon}"></i> ${msg}`;
+}
+function fmtDate(d){
+  if(!d||String(d).trim()==='') return '—';
+  const s = String(d).trim();
+
+  // 1. Google Sheets serial number (e.g. 44969)
+  if(/^\d{4,6}$/.test(s)){
+    const serial = parseInt(s);
+    // Sheets epoch: Dec 30 1899
+    const date = new Date((serial - 1) * 86400000 - 2209161600000);
+    if(!isNaN(date)) return date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  }
+
+  // 2. Already YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const date = new Date(s+'T00:00:00');
+    if(!isNaN(date)) return date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  }
+
+  // 3. DD/MM/YYYY (common in India / Google Sheets regional)
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)){
+    const [dd,mm,yyyy] = s.split('/');
+    const date = new Date(`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T00:00:00`);
+    if(!isNaN(date)) return date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  }
+
+  // 4. MM/DD/YYYY (US format fallback)
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)){
+    const date = new Date(s);
+    if(!isNaN(date)) return date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  }
+
+  // 5. DD-MM-YYYY or DD-Mon-YYYY (e.g. 18-05-2026 or 18-May-2026)
+  if(/^\d{1,2}-/.test(s)){
+    const parts = s.split('-');
+    if(parts.length===3){
+      // Try DD-MM-YYYY
+      const date = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}T00:00:00`);
+      if(!isNaN(date)) return date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    }
+  }
+
+  // 6. Last resort — let the browser try
+  const fallback = new Date(s);
+  if(!isNaN(fallback)) return fallback.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+
+  return s; // Return raw string if nothing works
+}
+function esc(s){
+  if(s==null)return'';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Team Member Map ───────────────────────────────────────────────────────────
+let teamMap = {}; // { 'Akash': 'akash@example.com', ... }
+
+// Default sample members — users replace with real ones
+const DEFAULT_MEMBERS = [
+  {name:'', email:''},
+  {name:'', email:''},
+];
+
+function initTeamRows(){
+  const container = document.getElementById('team-rows');
+  container.innerHTML = '';
+  DEFAULT_MEMBERS.forEach(m => addTeamRow(m.name, m.email));
+}
+
+function addTeamRow(name='', email=''){
+  const id = 'tr-' + Date.now() + Math.random().toString(36).slice(2,6);
+  const container = document.getElementById('team-rows');
+  const row = document.createElement('div');
+  row.className = 'team-row';
+  row.id = id;
+  row.innerHTML = `
+    <input type="text"  placeholder="e.g. Akash" value="${esc(name)}" class="team-name-input">
+    <input type="email" placeholder="akash@codeclouds.net" value="${esc(email)}" class="team-email-input">
+    <button class="del-btn" onclick="removeTeamRow('${id}')" title="Remove"><i class="ti ti-trash" aria-hidden="true"></i></button>
+  `;
+  container.appendChild(row);
+}
+
+function removeTeamRow(id){
+  const el = document.getElementById(id);
+  if(el) el.remove();
+}
+
+function saveTeamMap(){
+  const rows = document.querySelectorAll('#team-rows .team-row');
+  teamMap = {};
+  let count = 0;
+  rows.forEach(row => {
+    const name  = row.querySelector('.team-name-input').value.trim();
+    const email = row.querySelector('.team-email-input').value.trim();
+    if(name && email){
+      // Store by full name and also first name for fuzzy matching
+      teamMap[name.toLowerCase()] = email;
+      count++;
+    }
+  });
+  showFb('team-fb', 'success', count + ' member' + (count!==1?'s':'') + ' saved');
+  // Persist to localStorage so it survives page refresh
+  try{ localStorage.setItem('taskdash_team', JSON.stringify(teamMap)); }catch(e){}
+}
+
+function loadSavedTeam(){
+  try{
+    const saved = localStorage.getItem('taskdash_team');
+    if(saved){
+      teamMap = JSON.parse(saved);
+      // Rebuild rows from saved data
+      const container = document.getElementById('team-rows');
+      container.innerHTML = '';
+      Object.entries(teamMap).forEach(([name, email]) => addTeamRow(name, email));
+      if(Object.keys(teamMap).length > 0) return;
+    }
+  }catch(e){}
+  initTeamRows();
+}
+
+function lookupEmail(devString){
+  // devString may be "Akash" or "Akash, Raj M." (multiple devs)
+  if(!devString) return {email:'', found:false, name:''};
+  // Try first developer name
+  const firstName = devString.split(',')[0].trim();
+  // Exact match first
+  const exactKey = firstName.toLowerCase();
+  if(teamMap[exactKey]) return {email:teamMap[exactKey], found:true, name:firstName};
+  // Partial match — check if any key starts with or is contained in the name
+  for(const [key, email] of Object.entries(teamMap)){
+    if(firstName.toLowerCase().includes(key) || key.includes(firstName.toLowerCase())){
+      return {email, found:true, name:firstName};
+    }
+  }
+  return {email:'', found:false, name:firstName};
+}
+let EJS_READY=false;
+let EJS={pubkey:'',service:'',template:'',from:''};
+
+function saveEmailConfig(){
+  EJS.pubkey  =document.getElementById('ejs-pubkey').value.trim();
+  EJS.service =document.getElementById('ejs-service').value.trim();
+  EJS.template=document.getElementById('ejs-template').value.trim();
+  EJS.from    =document.getElementById('ejs-from').value.trim();
+  if(!EJS.pubkey||!EJS.service||!EJS.template){
+    showFb('ejs-fb','error','Fill in Public Key, Service ID and Template ID');return;
+  }
+  emailjs.init(EJS.pubkey);
+  EJS_READY=true;
+  showFb('ejs-fb','success','Email config saved — ready to send');
+  document.getElementById('email-config-panel').style.opacity='.75';
+}
+
+function openEmailModal(no){
+  const t=tasks.find(t=>String(t.no)===String(no));
+  if(!t)return;
+  // Banner
+  document.getElementById('m-task-name').textContent='Task #'+t.no+' · '+t.task;
+  document.getElementById('m-task-meta').textContent=
+    (t.client?t.client+' · ':'')+t.status+(t.date?' · Due '+fmtDate(t.date):'');
+  // Auto-lookup email from team map
+  const lookup = lookupEmail(t.dev);
+  const devName = lookup.name || (t.dev?t.dev.split(',')[0].trim():'');
+  document.getElementById('m-to-name').value = devName;
+  document.getElementById('m-to-email').value = lookup.email;
+  // Show badge indicating whether email was auto-found
+  const badge = document.getElementById('m-email-badge');
+  if(lookup.found){
+    badge.className='email-auto-badge';
+    badge.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Auto-filled from team list';
+  } else if(t.dev) {
+    badge.className='email-warn-badge';
+    badge.innerHTML='<i class="ti ti-alert-triangle" aria-hidden="true"></i> Not in team list — enter manually';
+  } else {
+    badge.innerHTML=''; badge.className='';
+  }
+  // Pre-fill subject
+  document.getElementById('m-subject').value=
+    'Task Assigned: '+t.task+' [#'+t.no+']';
+  // Pre-fill message body
+  const body=`Hi ${devName||'there'},
+
+You have been assigned the following task:
+
+  Task:    #${t.no} — ${t.task}
+  Client:  ${t.client||'—'}
+  Status:  ${t.status}
+  Due:     ${fmtDate(t.date)}
+  QA:      ${t.qa||'—'}
+
+Please review the requirements and update the status as you progress.
+
+Let me know if you have any questions.
+
+Regards,
+${EJS.from||'Team Lead'}`;
+  document.getElementById('m-message').value=body;
+  document.getElementById('modal-fb').textContent='';
+  document.getElementById('modal-fb').className='modal-fb';
+  document.getElementById('btn-send').disabled=false;
+  document.getElementById('btn-send').innerHTML='<i class="ti ti-send"></i> Send Email';
+  document.getElementById('email-modal').style.display='flex';
+}
+
+function closeModal(){
+  document.getElementById('email-modal').style.display='none';
+}
+function closeModalOnOverlay(e){
+  if(e.target===document.getElementById('email-modal'))closeModal();
+}
+
+async function sendEmail(){
+  if(!EJS_READY){
+    document.getElementById('modal-fb').className='modal-fb error';
+    document.getElementById('modal-fb').innerHTML='<i class="ti ti-alert-circle"></i> Set up EmailJS config first';
+    return;
+  }
+  const toEmail=document.getElementById('m-to-email').value.trim();
+  const toName =document.getElementById('m-to-name').value.trim();
+  const subject=document.getElementById('m-subject').value.trim();
+  const message=document.getElementById('m-message').value.trim();
+  if(!toEmail){
+    document.getElementById('modal-fb').className='modal-fb error';
+    document.getElementById('modal-fb').innerHTML='<i class="ti ti-alert-circle"></i> Enter developer email';
+    return;
+  }
+  const t=tasks.find(t=>String(t.no)===String(selectedNo));
+  if(!t)return;
+
+  const btn=document.getElementById('btn-send');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite"></i> Sending…';
+
+  const params={
+    to_email:   toEmail,
+    to_name:    toName,
+    from_name:  EJS.from||'Team Lead',
+    task_name:  t.task,
+    task_no:    t.no,
+    task_status:t.status,
+    task_client:t.client||'—',
+    task_date:  fmtDate(t.date),
+    subject:    subject,
+    message:    message,
+  };
+
+  try{
+    await emailjs.send(EJS.service, EJS.template, params);
+    document.getElementById('modal-fb').className='modal-fb success';
+    document.getElementById('modal-fb').innerHTML='<i class="ti ti-check"></i> Email sent to '+toEmail;
+    btn.innerHTML='<i class="ti ti-check"></i> Sent!';
+    setTimeout(closeModal, 2000);
+  }catch(err){
+    document.getElementById('modal-fb').className='modal-fb error';
+    document.getElementById('modal-fb').innerHTML='<i class="ti ti-alert-circle"></i> Failed: '+(err.text||err.message||'Check your EmailJS config');
+    btn.disabled=false;
+    btn.innerHTML='<i class="ti ti-send"></i> Send Email';
+  }
+}
+
+// ── Bulk Notify ───────────────────────────────────────────────────────────────
+function openBulkModal(){
+  if(!EJS_READY){
+    alert('Please set up and save your EmailJS config first.');return;
+  }
+  // Group current filtered tasks by developer
+  const devGroups = {};
+  filtered.forEach(t => {
+    if(!t.dev) return;
+    // Support multiple devs separated by comma
+    t.dev.split(',').forEach(rawName => {
+      const name = rawName.trim();
+      if(!name) return;
+      if(!devGroups[name]) devGroups[name] = [];
+      devGroups[name].push(t);
+    });
+  });
+
+  if(!Object.keys(devGroups).length){
+    alert('No tasks with assigned developers in the current view.');return;
+  }
+
+  // Build the dev list UI
+  const container = document.getElementById('bulk-dev-list');
+  container.innerHTML = '';
+  let totalDev = 0, totalWithEmail = 0;
+
+  Object.entries(devGroups).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([devName, devTasks])=>{
+    const lookup = lookupEmail(devName);
+    const email = lookup.email;
+    const hasEmail = !!email;
+    const initials = devName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    totalDev++;
+    if(hasEmail) totalWithEmail++;
+
+    const card = document.createElement('div');
+    card.className = 'bulk-dev-card' + (hasEmail?'':' bulk-no-email');
+    card.dataset.dev = devName;
+
+    const taskRows = devTasks.map(t => {
+      const cfg = STATUS_CFG[t.status]||STATUS_CFG['To Do'];
+      return `<div class="bulk-task-row">
+        <input type="checkbox" class="bulk-task-cb" data-no="${t.no}" data-dev="${devName}" checked>
+        <span class="bulk-task-name">#${t.no} — ${esc(t.task)}</span>
+        <span class="sc-chip ${cfg.dot}" style="font-size:9px;padding:1px 7px">${t.status}</span>
+        <span style="font-size:10px;color:var(--text3)">${esc(t.client)}</span>
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="bulk-dev-head">
+        <input type="checkbox" class="bulk-dev-cb" data-dev="${devName}" checked
+          style="width:14px;height:14px;cursor:pointer;accent-color:var(--blue-b);flex-shrink:0"
+          onchange="toggleDevTasks('${devName}', this.checked)">
+        <div class="bulk-dev-avatar">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div class="bulk-dev-name">${esc(devName)}</div>
+          <div class="bulk-dev-email">${hasEmail ? email : '⚠ No email — add to Team list'}</div>
+        </div>
+        <div style="font-size:10px;color:var(--text3)">${devTasks.length} task${devTasks.length!==1?'s':''}</div>
+      </div>
+      <div class="bulk-dev-tasks" id="bulk-tasks-${devName.replace(/\s/g,'-')}">${taskRows}</div>
+    `;
+    container.appendChild(card);
+  });
+
+  // Update select info
+  updateBulkSelectInfo();
+
+  // Reset progress/results
+  document.getElementById('bulk-progress').style.display='none';
+  document.getElementById('bulk-results').style.display='none';
+  document.getElementById('bulk-results').innerHTML='';
+  const sendBtn = document.getElementById('btn-bulk-send');
+  sendBtn.disabled=false;
+  sendBtn.innerHTML='<i class="ti ti-send"></i> Send All Emails';
+
+  document.getElementById('bulk-modal').style.display='flex';
+}
+
+function toggleDevTasks(devName, checked){
+  const safeId = devName.replace(/\s/g,'-');
+  document.querySelectorAll(`#bulk-tasks-${safeId} .bulk-task-cb`).forEach(cb => cb.checked=checked);
+  updateBulkSelectInfo();
+}
+
+function updateBulkSelectInfo(){
+  const allCbs = document.querySelectorAll('.bulk-task-cb');
+  const checked = [...allCbs].filter(cb=>cb.checked).length;
+  document.getElementById('bulk-select-info').textContent = checked + ' of ' + allCbs.length + ' tasks selected';
+}
+
+// Listen for individual task checkbox changes
+document.addEventListener('change', e => {
+  if(e.target.classList.contains('bulk-task-cb')) updateBulkSelectInfo();
+});
+
+function closeBulkModal(){ document.getElementById('bulk-modal').style.display='none'; }
+function closeBulkOnOverlay(e){ if(e.target===document.getElementById('bulk-modal')) closeBulkModal(); }
+
+async function sendBulkEmails(){
+  if(!EJS_READY){ alert('EmailJS not configured.'); return; }
+
+  // Gather selected tasks grouped by dev
+  const devTaskMap = {};
+  document.querySelectorAll('.bulk-task-cb:checked').forEach(cb => {
+    const dev = cb.dataset.dev;
+    const no  = cb.dataset.no;
+    if(!devTaskMap[dev]) devTaskMap[dev] = [];
+    const t = tasks.find(t=>String(t.no)===String(no));
+    if(t) devTaskMap[dev].push(t);
+  });
+
+  const devNames = Object.keys(devTaskMap);
+  if(!devNames.length){ alert('No tasks selected.'); return; }
+
+  const btn = document.getElementById('btn-bulk-send');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite"></i> Sending…';
+
+  // Show progress bar
+  const progWrap  = document.getElementById('bulk-progress');
+  const progBar   = document.getElementById('bulk-progress-bar');
+  const progLabel = document.getElementById('bulk-progress-label');
+  const progCount = document.getElementById('bulk-progress-count');
+  progWrap.style.display='block';
+
+  const results = [];
+  let done = 0;
+
+  for(const devName of devNames){
+    const devTasks = devTaskMap[devName];
+    const lookup   = lookupEmail(devName);
+
+    progLabel.textContent = 'Sending to ' + devName + '…';
+    progCount.textContent = done + ' / ' + devNames.length;
+    progBar.style.width   = Math.round((done/devNames.length)*100)+'%';
+
+    if(!lookup.email){
+      results.push({dev:devName, status:'skip', msg:'No email mapped — skipped'});
+      done++; continue;
+    }
+
+    // Build combined task list for this dev
+    const taskLines = devTasks.map(t=>
+      `  • #${t.no} — ${t.task} [${t.status}] · ${t.client}${t.date?' · Due '+fmtDate(t.date):''}`
+    ).join('\n');
+
+    const isSingle = devTasks.length === 1;
+    const subject  = isSingle
+      ? `Task Assigned: ${devTasks[0].task} [#${devTasks[0].no}]`
+      : `You have ${devTasks.length} tasks assigned`;
+
+    const body = `Hi ${devName},
+
+${isSingle ? 'You have been assigned the following task:' : 'You have been assigned the following ' + devTasks.length + ' tasks:'}
+
+${taskLines}
+
+Please review the requirements and update the status as you progress.
+
+Let me know if you have any questions.
+
+Regards,
+${EJS.from||'Team Lead'}`;
+
+    const params = {
+      to_email:    lookup.email,
+      to_name:     devName,
+      from_name:   EJS.from||'Team Lead',
+      task_name:   isSingle ? devTasks[0].task : devTasks.length+' tasks',
+      task_no:     isSingle ? devTasks[0].no   : '—',
+      task_status: isSingle ? devTasks[0].status: '—',
+      task_client: isSingle ? devTasks[0].client: devTasks.map(t=>t.client).join(', '),
+      task_date:   isSingle ? fmtDate(devTasks[0].date) : '—',
+      subject,
+      message:     body,
+    };
+
+    try{
+      await emailjs.send(EJS.service, EJS.template, params);
+      results.push({dev:devName, email:lookup.email, status:'ok',
+        msg: devTasks.length + ' task' + (devTasks.length!==1?'s':'') + ' · sent to ' + lookup.email});
+    }catch(err){
+      results.push({dev:devName, email:lookup.email, status:'fail',
+        msg:'Failed: '+(err.text||err.message||'unknown error')});
+    }
+    done++;
+    // Small delay between sends to avoid rate limits
+    await new Promise(r=>setTimeout(r,400));
+  }
+
+  // Final progress
+  progBar.style.width='100%';
+  progLabel.textContent='Done!';
+  progCount.textContent=done+' / '+devNames.length;
+
+  // Show results
+  const resultsEl = document.getElementById('bulk-results');
+  resultsEl.style.display='flex';
+  resultsEl.innerHTML = results.map(r=>`
+    <div class="result-row ${r.status}">
+      <i class="ti ti-${r.status==='ok'?'check':r.status==='skip'?'minus':'alert-circle'}" aria-hidden="true"></i>
+      <strong>${esc(r.dev)}</strong>
+      <span style="flex:1">${esc(r.msg)}</span>
+    </div>
+  `).join('');
+
+  btn.innerHTML='<i class="ti ti-check"></i> Done';
+  setTimeout(()=>{ btn.disabled=false; btn.innerHTML='<i class="ti ti-send"></i> Send All Emails'; },3000);
+}
+
+// ── Config boot ───────────────────────────────────────────────────────────────
+function bootFromConfig(){
+  const cfg = window.DASHBOARD_CONFIG;
+  if(!cfg) { initTeamRows(); loadSample(); return; }
+
+  // Fill credentials into form fields
+  const set = (id, val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
+  set('cfg-sid',     cfg.sheetId);
+  set('cfg-key',     cfg.apiKey);
+  set('cfg-tab',     cfg.sheetTab);
+  set('cfg-oauth',   cfg.oauthToken);
+  set('ejs-pubkey',  cfg.emailjsPublicKey);
+  set('ejs-service', cfg.emailjsServiceId);
+  set('ejs-template',cfg.emailjsTemplateId);
+  set('ejs-from',    cfg.emailjsSenderName);
+
+  // Apply credentials to runtime vars
+  if(cfg.sheetId)    SHEET_ID    = cfg.sheetId;
+  if(cfg.apiKey)     API_KEY     = cfg.apiKey;
+  if(cfg.sheetTab)   SHEET_TAB   = cfg.sheetTab || 'Sheet1';
+  if(cfg.oauthToken) OAUTH_TOKEN = cfg.oauthToken;
+  updateOAuthBadge();
+
+  // Apply EmailJS config
+  if(cfg.emailjsPublicKey && cfg.emailjsServiceId && cfg.emailjsTemplateId){
+    try{
+      emailjs.init(cfg.emailjsPublicKey);
+      EJS = { service: cfg.emailjsServiceId, template: cfg.emailjsTemplateId, from: cfg.emailjsSenderName||'' };
+      EJS_READY = true;
+    }catch(e){}
+  }
+
+  // Load team members from config
+  if(cfg.team && cfg.team.length > 0){
+    teamMap = {};
+    const container = document.getElementById('team-rows');
+    container.innerHTML = '';
+    cfg.team.forEach(m => {
+      if(m.name){ teamMap[m.name.toLowerCase()] = m.email; addTeamRow(m.name, m.email); }
+    });
+  } else {
+    initTeamRows();
+  }
+
+  // Show config-loaded badge in header
+  const sub = document.getElementById('header-sub');
+  if(cfg.sheetId && cfg.apiKey){
+    // will be overwritten by loadFromSheets, that's fine
+  } else if(cfg && Object.values(cfg).some(v => v && typeof v === 'string' && v.length > 0)){
+    if(sub) sub.textContent = 'Config loaded — add Sheet ID & API Key to connect';
+  }
+
+  // Auto-connect if we have credentials, otherwise show sample
+  if(cfg.sheetId && cfg.apiKey){
+    loadFromSheets();
+  } else {
+    loadSample();
+  }
+}
+
+// ── Save config back ──────────────────────────────────────────────────────────
+function saveConfigToFile(){
+  // Collect current field values
+  const get = id => { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+
+  // Collect team rows
+  const teamRows = [];
+  document.querySelectorAll('#team-rows .team-row').forEach(row => {
+    const name  = row.querySelector('.team-name-input').value.trim();
+    const email = row.querySelector('.team-email-input').value.trim();
+    if(name) teamRows.push({ name, email });
+  });
+
+  const cfg = {
+    sheetId:           get('cfg-sid'),
+    apiKey:            get('cfg-key'),
+    sheetTab:          get('cfg-tab') || 'Sheet1',
+    oauthToken:        get('cfg-oauth'),
+    emailjsPublicKey:  get('ejs-pubkey'),
+    emailjsServiceId:  get('ejs-service'),
+    emailjsTemplateId: get('ejs-template'),
+    emailjsSenderName: get('ejs-from'),
+    team:              teamRows,
+  };
+
+  const teamLines = teamRows.map(m =>
+    `    { name: ${JSON.stringify(m.name)}, email: ${JSON.stringify(m.email)} },`
+  ).join('\n');
+
+  const fileContent =
+`// ─────────────────────────────────────────────────────────────────
+//  Task Dashboard — Configuration File
+//  Edit the values below, then save this file.
+//  The dashboard reads these on every page load.
+// ─────────────────────────────────────────────────────────────────
+
+window.DASHBOARD_CONFIG = {
+
+  // ── Google Sheets ──────────────────────────────────────────────
+  sheetId:    ${JSON.stringify(cfg.sheetId)},
+  apiKey:     ${JSON.stringify(cfg.apiKey)},
+  sheetTab:   ${JSON.stringify(cfg.sheetTab)},
+  oauthToken: ${JSON.stringify(cfg.oauthToken)},
+
+  // ── EmailJS ────────────────────────────────────────────────────
+  emailjsPublicKey:  ${JSON.stringify(cfg.emailjsPublicKey)},
+  emailjsServiceId:  ${JSON.stringify(cfg.emailjsServiceId)},
+  emailjsTemplateId: ${JSON.stringify(cfg.emailjsTemplateId)},
+  emailjsSenderName: ${JSON.stringify(cfg.emailjsSenderName)},
+
+  // ── Team Members ───────────────────────────────────────────────
+  team: [
+${teamLines}
+  ],
+
+};
+`;
+
+  // Update runtime vars immediately
+  SHEET_ID    = cfg.sheetId;
+  API_KEY     = cfg.apiKey;
+  SHEET_TAB   = cfg.sheetTab;
+  OAUTH_TOKEN = cfg.oauthToken;
+  updateOAuthBadge();
+
+  // POST to local server — writes config.js in the same directory
+  fetch('/save-config', {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body:    fileContent,
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.ok){
+      showFb('conn-fb', 'success', '✓ config.js saved in project folder');
+      showFb('team-fb', 'success', '✓ config.js saved');
+      showFb('ejs-fb',  'success', '✓ config.js saved');
+    } else {
+      throw new Error(data.error || 'unknown error');
+    }
+  })
+  .catch(err => {
+    // Server not running — fall back to download so user is never stuck
+    console.warn('Save-config server not reachable, falling back to download:', err.message);
+    const blob = new Blob([fileContent], { type: 'text/javascript' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'config.js';
+    a.click();
+    URL.revokeObjectURL(url);
+    showFb('conn-fb', 'info', 'Server not running — config.js downloaded to Downloads (run server.js to enable direct saves)');
+  });
+}
+
+// Init
+bootFromConfig();
+</script>
+</body>
+</html>
